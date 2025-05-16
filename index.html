@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Global Online Banking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
+        .header { background: #005595; color: white; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 100%; padding: 15px; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { background: #005595; color: white; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #003d66; }
+        .balance { font-size: 28px; color: #28a745; font-weight: bold; margin: 15px 0; }
+        .transaction { border-bottom: 1px solid #eee; padding: 12px 0; }
+        .pending { opacity: 0.7; border-left: 4px solid #ffc107; padding-left: 10px; }
+        .completed { border-left: 4px solid #28a745; padding-left: 10px; }
+        .interest-badge { background: #ffc107; color: #333; padding: 3px 8px; border-radius: 10px; font-size: 12px; }
+        .check-deposit { background: #f8f9fa; border-left: 4px solid #28a745; padding: 10px; margin: 10px 0; }
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #005595; z-index: 1000; display: flex; justify-content: center; align-items: center; color: white; }
+        #loginForm { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; color: black; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .bank-logo { width: 120px; height: auto; margin: 0 auto 15px; display: block; }
+        .security-notice { font-size: 12px; color: #666; text-align: center; margin-top: 15px; }
+        .transfer-type { display: none; }
+        .transfer-type.active { display: block; }
+        .account-tabs { display: flex; margin-bottom: 15px; }
+        .account-tab { padding: 10px 15px; background: #eee; cursor: pointer; }
+        .account-tab.active { background: #005595; color: white; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Vantage West specific styles */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        }
+        .quick-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .quick-action { flex: 1; min-width: 100px; background: #f0f7ff; border: 1px solid #cce4ff; border-radius: 8px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .quick-action:hover { background: #d9ebff; transform: translateY(-2px); }
+        .quick-action i { font-size: 24px; color: #005595; margin-bottom: 8px; display: block; }
+        .account-card { background: linear-gradient(135deg, #005595, #0085ca); color: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        .account-card h3 { margin-top: 0; }
+        .account-card .balance { color: white; }
+        .external-account { background: #f8f9fa; border-left: 4px solid #6c757d; padding: 10px; margin: 10px 0; }
+        .credit-score { background: #fff8e6; border-radius: 8px; padding: 15px; margin: 15px 0; }
+        .credit-score .score { font-size: 36px; font-weight: bold; color: #005595; text-align: center; margin: 10px 0; }
+        .progress-container { background: #e9ecef; height: 10px; border-radius: 5px; margin: 10px 0; }
+        .progress-bar { background: #005595; height: 100%; border-radius: 5px; }
+        .bill-pay-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .bill-pay-item:last-child { border-bottom: none; }
+        .due-soon { color: #dc3545; font-weight: bold; }
+        .nav-tabs { display: flex; border-bottom: 1px solid #dee2e6; margin-bottom: 15px; }
+        .nav-tab { padding: 10px 15px; cursor: pointer; border-bottom: 3px solid transparent; }
+        .nav-tab.active { border-bottom-color: #005595; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Password Protected Login Screen -->
+    <div id="loginScreen">
+        <div id="loginForm">
+            <svg class="bank-logo" viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20,10 L40,10 L40,30 L20,30 Z" fill="#005595" rx="5"/>
+                <circle cx="30" cy="20" r="8" fill="white"/>
+                <text x="60" y="25" font-family="Arial" font-size="20" font-weight="bold" fill="#005595">Vantage West</text>
+            </svg>
+            <p style="text-align:center;margin-bottom:20px;">Secure Account Login</p>
+            <input type="password" id="passwordInput" placeholder="Enter Online Banking Password">
+            <button onclick="checkPassword()">Sign In</button>
+            <div class="security-notice">
+                <i class="fas fa-lock"></i> Secure SSL Connection • <i class="fas fa-shield-alt"></i> 2FA Protected
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Banking App (Hidden until login) -->
+    <div id="bankApp" style="display: none;">
+        <div class="header">
+            <svg viewBox="0 0 200 40" width="150" height="30" style="margin: 0 auto;">
+                <path d="M10,5 L40,5 L40,25 L10,25 Z" fill="white" rx="3"/>
+                <circle cx="25" cy="15" r="5" fill="#005595"/>
+                <text x="50" y="20" font-family="Arial" font-size="16" font-weight="bold" fill="white">Vantage West</text>
+            </svg>
+            <p id="currentDate"></p>
+        </div>
+
+        <div class="container">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="quick-action" onclick="showTab('dashboard')">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </div>
+                <div class="quick-action" onclick="showTab('transfer')">
+                    <i class="fas fa-exchange-alt"></i>
+                    Transfer
+                </div>
+                <div class="quick-action" onclick="showTab('billpay')">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Bill Pay
+                </div>
+                <div class="quick-action" onclick="showTab('loans')">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    Loans
+                </div>
+                <div class="quick-action" onclick="showTab('credit')">
+                    <i class="fas fa-chart-line"></i>
+                    Credit Score
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboardTab" class="tab-content active">
+                <div class="dashboard-grid">
+                    <!-- Account Summary -->
+                    <div class="card">
+                        <h2>Account Summary</h2>
+                        <div class="account-card">
+                            <h3>Hans Weellary Victor's Checking</h3>
+                            <p>Available Balance:</p>
+                            <div class="balance" id="checkingBalance">$134,432.19</div>
+                            <small>Account #: XXXX-7839</small>
+                        </div>
+                        
+                        <div class="account-card" style="background: linear-gradient(135deg, #28a745, #5cb85c);">
+                            <h3>High-Yield Savings</h3>
+                            <p>Available Balance:</p>
+                            <div class="balance" id="savingsBalanceAmount">$362,646.92</div>
+                            <small>Account #: XXXX-2246 • APY: 4.25%</small>
+                        </div>
+                        
+                        <div class="external-account">
+                            <h4>External Account (Chase)</h4>
+                            <p>Balance: $45,289.34</p>
+                            <small>Account #: XXXX-4528 • Last updated: Today</small>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="card">
+                        <h2>Recent Transactions</h2>
+                        <div id="recentTransactions">
+                            <div class="transaction completed">
+                                <strong>ACH Deposit</strong> <span style="color:#28a745">+$12,500.00</span><br>
+                                <small>Today | PAYROLL: Hans Weellary Victor ENTERPRISES</small>
+                            </div>
+                            <div class="transaction completed">
+                                <strong>Investment Dividend</strong> <span style="color:#28a745">+$2,341.18</span><br>
+                                <small>Yesterday | GLOBAL INVESTMENTS</small>
+                            </div>
+                            <div class="transaction completed">
+                                <strong>Bill Payment</strong> <span style="color:#dc3545">-$1,245.67</span><br>
+                                <small>Yesterday | SOUTHWEST GAS</small>
+                            </div>
+                        </div>
+                        <button style="margin-top: 15px;" onclick="showTab('transactions')">View All Transactions</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfer Tab -->
+            <div id="transferTab" class="tab-content">
+                <div class="card">
+                    <h2>Transfer Funds</h2>
+                    <select id="transferTypeSelect" onchange="showTransferType()">
+                        <option value="internal">Between My Accounts</option>
+                        <option value="external">To Another Person</option>
+                        <option value="externalAccount">To External Account</option>
+                    </select>
+                    
+                    <!-- Internal Transfer Form -->
+                    <div id="internalTransfer" class="transfer-type active">
+                        <select id="internalAccount">
+                            <option>Platinum Checking (XXXX-7839)</option>
+                            <option>High-Yield Savings (XXXX-2246)</option>
+                        </select>
+                        <input type="number" id="internalAmount" placeholder="Amount ($)">
+                    </div>
+                    
+                    <!-- External Transfer Form -->
+                    <div id="externalTransfer" class="transfer-type">
+                        <input type="text" id="recipientName" placeholder="Recipient Full Name">
+                        <input type="text" id="recipientBank" placeholder="Recipient Bank Name">
+                        <input type="text" id="accountNumber" placeholder="Account Number">
+                        <input type="text" id="routingNumber" placeholder="Routing Number">
+                        <input type="number" id="externalAmount" placeholder="Amount ($)">
+                        <select id="transferSpeed">
+                            <option value="standard">Standard (1-3 business days)</option>
+                            <option value="express">Express (Next business day)</option>
+                            <option value="instant">Instant (Within minutes)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- External Account Transfer Form -->
+                    <div id="externalAccountTransfer" class="transfer-type">
+                        <select id="externalAccountSelect">
+                            <option>Chase Checking (XXXX-4528)</option>
+                            <option>Bank of America Savings (XXXX-6712)</option>
+                        </select>
+                        <input type="number" id="externalAccountAmount" placeholder="Amount ($)">
+                        <select id="externalAccountSpeed">
+                            <option value="standard">Standard (1-3 business days)</option>
+                            <option value="express">Express (Next business day)</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="processTransfer()">Continue Transfer</button>
+                    <p id="transferResult" style="color: #28a745; font-weight:bold;"></p>
+                </div>
+
+                <!-- Check Deposit -->
+                <div class="card">
+                    <h2>Mobile Check Deposit</h2>
+                    <input type="number" id="checkAmount" placeholder="Check Amount ($)">
+                    <button onclick="depositCheck()">Deposit Check</button>
+                    <div id="checkProcessing" style="display: none; text-align: center;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 30px; color: #17a2b8;"></i>
+                        <p style="color: #17a2b8;">Processing your deposit...</p>
+                    </div>
+                    <div id="checkResult" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Bill Pay Tab -->
+            <div id="billpayTab" class="tab-content">
+                <div class="card">
+                    <h2>Bill Pay</h2>
+                    <div class="nav-tabs">
+                        <div class="nav-tab active" onclick="showBillPayTab('payees')">Payees</div>
+                        <div class="nav-tab" onclick="showBillPayTab('upcoming')">Upcoming Bills</div>
+                        <div class="nav-tab" onclick="showBillPayTab('history')">Payment History</div>
+                    </div>
+                    
+                    <div id="payeesTab" class="tab-content active">
+                        <button onclick="showAddPayeeForm()" style="margin-bottom: 15px;">
+                            <i class="fas fa-plus"></i> Add New Payee
+                        </button>
+                        
+                        <div id="payeeList">
+                            <div class="bill-pay-item">
+                                <div>
+                                    <strong>Southwest Gas</strong><br>
+                                    <small>Account: 4852-XXXX-2314</small>
+                                </div>
+                                <div>
+                                    <button style="width: auto; padding: 5px 10px;" onclick="payBill('Southwest Gas')">Pay</button>
+                                </div>
+                            </div>
+                            <div class="bill-pay-item">
+                                <div>
+                                    <strong>Tucson Electric Power</strong><br>
+                                    <small>Account: 7821-XXXX-4521</small>
+                                </div>
+                                <div>
+                                    <button style="width: auto; padding: 5px 10px;" onclick="payBill('Tucson Electric Power')">Pay</button>
+                                </div>
+                            </div>
+                            <div class="bill-pay-item">
+                                <div>
+                                    <strong>AT&T Wireless</strong><br>
+                                    <small>Account: 623-XXX-7845</small>
+                                </div>
+                                <div>
+                                    <button style="width: auto; padding: 5px 10px;" onclick="payBill('AT&T Wireless')">Pay</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="addPayeeForm" style="display: none;">
+                            <h3>Add New Payee</h3>
+                            <input type="text" id="newPayeeName" placeholder="Payee Name">
+                            <input type="text" id="newPayeeAccount" placeholder="Account Number">
+                            <input type="text" id="newPayeeAddress" placeholder="Payee Address">
+                            <input type="text" id="newPayeePhone" placeholder="Payee Phone">
+                            <button onclick="addPayee()">Add Payee</button>
+                            <button onclick="hideAddPayeeForm()" style="background: #6c757d;">Cancel</button>
+                        </div>
+                    </div>
+                    
+                    <div id="upcomingTab" class="tab-content">
+                        <div class="bill-pay-item due-soon">
+                            <div>
+                                <strong>Southwest Gas</strong><br>
+                                <small>Due: Tomorrow • Amount: $124.78</small>
+                            </div>
+                            <div>
+                                <button style="width: auto; padding: 5px 10px;" onclick="payBill('Southwest Gas')">Pay Now</button>
+                            </div>
+                        </div>
+                        <div class="bill-pay-item">
+                            <div>
+                                <strong>Tucson Electric Power</strong><br>
+                                <small>Due: 05/25/2023 • Amount: $187.32</small>
+                            </div>
+                            <div>
+                                <button style="width: auto; padding: 5px 10px;" onclick="payBill('Tucson Electric Power')">Pay Now</button>
+                            </div>
+                        </div>
+                        <div class="bill-pay-item">
+                            <div>
+                                <strong>AT&T Wireless</strong><br>
+                                <small>Due: 06/01/2023 • Amount: $95.67</small>
+                            </div>
+                            <div>
+                                <button style="width: auto; padding: 5px 10px;" onclick="payBill('AT&T Wireless')">Pay Now</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="historyTab" class="tab-content">
+                        <div class="transaction completed">
+                            <strong>Bill Payment</strong> <span style="color:#dc3545">-$124.78</span><br>
+                            <small>05/01/2023 | SOUTHWEST GAS</small>
+                        </div>
+                        <div class="transaction completed">
+                            <strong>Bill Payment</strong> <span style="color:#dc3545">-$187.32</span><br>
+                            <small>04/25/2023 | TUCSON ELECTRIC POWER</small>
+                        </div>
+                        <div class="transaction completed">
+                            <strong>Bill Payment</strong> <span style="color:#dc3545">-$95.67</span><br>
+                            <small>04/01/2023 | AT&T WIRELESS</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loans Tab -->
+            <div id="loansTab" class="tab-content">
+                <div class="card">
+                    <h2>My Loans</h2>
+                    <div class="account-card" style="background: linear-gradient(135deg, #6f42c1, #9b59b6);">
+                        <h3>Auto Loan</h3>
+                        <p>Current Balance:</p>
+                        <div class="balance">$23,456.78</div>
+                        <small>Account #: XXXX-5623 • Rate: 3.25% • Next Payment: $487.35 due 06/05/2023</small>
+                        <button style="margin-top: 10px; background: white; color: #6f42c1;" onclick="makeLoanPayment('Auto Loan')">Make Payment</button>
+                    </div>
+                    
+                    <div class="account-card" style="background: linear-gradient(135deg, #fd7e14, #f39c12);">
+                        <h3>Home Equity Line</h3>
+                        <p>Current Balance:</p>
+                        <div class="balance">$145,678.90</div>
+                        <small>Account #: XXXX-7845 • Rate: 4.75% • Available Credit: $54,321.10</small>
+                        <button style="margin-top: 10px; background: white; color: #fd7e14;" onclick="makeLoanPayment('Home Equity Line')">Make Payment</button>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="showLoanApplication()">
+                            <i class="fas fa-hand-holding-usd"></i> Apply for a New Loan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Score Tab -->
+            <div id="creditTab" class="tab-content">
+                <div class="card">
+                    <h2>Credit Score & Monitoring</h2>
+                    <div class="credit-score">
+                        <h3>Your VantageScore 3.0</h3>
+                        <div class="score">786</div>
+                        <small>Last updated: 05/01/2023</small>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 78.6%;"></div>
+                        </div>
+                        <small>Excellent (740-850)</small>
+                    </div>
+                    
+                    <h3>Credit Factors</h3>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Payment History</strong>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 95%; background: #28a745;"></div>
+                        </div>
+                        <small>No late payments</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong>Credit Utilization</strong>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 18%; background: #28a745;"></div>
+                        </div>
+                        <small>18% of $45,000 total credit</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong>Credit Age</strong>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 82%; background: #17a2b8;"></div>
+                        </div>
+                        <small>11 years average account age</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong>Total Accounts</strong>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 65%; background: #ffc107;"></div>
+                        </div>
+                        <small>8 active accounts</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong>Credit Inquiries</strong>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 10%; background: #28a745;"></div>
+                        </div>
+                        <small>1 inquiry in last 2 years</small>
+                    </div>
+                    
+                    <button onclick="showFullCreditReport()">
+                        <i class="fas fa-file-alt"></i> View Full Credit Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Account data
+        const accounts = {
+            checking: {
+                balance: 134432.19,
+                number: "7839",
+                transactions: [
+                    { type: 'deposit', amount: 12500, description: 'ACH Deposit', details: 'PAYROLL: Hans Weellary Victor', date: new Date(), status: 'completed' },
+                    { type: 'deposit', amount: 2341.18, description: 'Investment Dividend', details: 'GLOBAL INVESTMENTS', date: new Date(Date.now() - 86400000), status: 'completed' },
+                    { type: 'payment', amount: -1245.67, description: 'Bill Payment', details: 'SOUTHWEST GAS', date: new Date(Date.now() - 86400000), status: 'completed' }
+                ]
+            },
+            savings: {
+                balance: 362646.92,
+                number: "2246",
+                transactions: [
+                    { type: 'deposit', amount: 5000, description: 'Monthly Savings', details: 'AUTO-TRANSFER FROM CHECKING', date: new Date(Date.now() - 259200000), status: 'completed' }
+                ],
+                lastInterestDate: new Date(Date.now() - 86400000),
+                interestRate: 0.0425
+            },
+            external: [
+                { name: "Chase Checking", balance: 45289.34, number: "4528", lastUpdated: new Date() }
+            ],
+            loans: [
+                { name: "Auto Loan", balance: 23456.78, number: "5623", rate: 0.0325, nextPayment: { amount: 487.35, date: new Date(Date.now() + 20 * 86400000) } },
+                { name: "Home Equity Line", balance: 145678.90, number: "7845", rate: 0.0475, creditLimit: 200000 }
+            ],
+            credit: {
+                score: 786,
+                factors: {
+                    paymentHistory: 95,
+                    creditUtilization: 18,
+                    creditAge: 82,
+                    totalAccounts: 65,
+                    inquiries: 10
+                },
+                lastUpdated: new Date(Date.now() - 14 * 86400000)
+            },
+            bills: {
+                payees: [
+                    { name: "Southwest Gas", account: "4852-2314", nextDue: { amount: 124.78, date: new Date(Date.now() + 86400000) } },
+                    { name: "Tucson Electric Power", account: "7821-4521", nextDue: { amount: 187.32, date: new Date(Date.now() + 10 * 86400000) } },
+                    { name: "AT&T Wireless", account: "623-7845", nextDue: { amount: 95.67, date: new Date(Date.now() + 17 * 86400000) } }
+                ],
+                history: [
+                    { payee: "Southwest Gas", amount: 124.78, date: new Date(Date.now() - 14 * 86400000) },
+                    { payee: "Tucson Electric Power", amount: 187.32, date: new Date(Date.now() - 20 * 86400000) },
+                    { payee: "AT&T Wireless", amount: 95.67, date: new Date(Date.now() - 44 * 86400000) }
+                ]
+            }
+        };
+
+        // ===== PASSWORD PROTECTION =====
+        function checkPassword() {
+            const password = document.getElementById("passwordInput").value;
+            if (password === "Uptimal71$") {
+                document.getElementById("loginScreen").style.display = "none";
+                document.getElementById("bankApp").style.display = "block";
+                initializeBank();
+            } else {
+                alert("Incorrect password. Please try again.");
+                document.getElementById("passwordInput").value = "";
+            }
+        }
+
+        // ===== BANK INITIALIZATION =====
+        function initializeBank() {
+            // Set dates
+            updateDate();
+            setInterval(updateDate, 60000); // Update time every minute
+            
+            // Start interest timer (runs every 15 seconds for demo)
+            setInterval(calculateInterest, 15000);
+            
+            // Load initial data
+            updateDashboard();
+        }
+
+        function updateDate() {
+            const now = new Date();
+            document.getElementById("currentDate").textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            }) + ' • ' + now.toLocaleTimeString();
+        }
+
+        // ===== TAB NAVIGATION =====
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.quick-action').forEach(action => {
+                action.style.background = '#f0f7ff';
+            });
+            
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            document.querySelector(`.quick-action[onclick="showTab('${tabName}')"]`).style.background = '#d9ebff';
+        }
+
+        function showBillPayTab(tabName) {
+            document.querySelectorAll('#billpayTab .tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('#billpayTab .nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            document.querySelector(`.nav-tab[onclick="showBillPayTab('${tabName}')"]`).classList.add('active');
+        }
+
+        // ===== DASHBOARD UPDATES =====
+        function updateDashboard() {
+            // Update balances
+            document.getElementById("checkingBalance").textContent = `$${accounts.checking.balance.toFixed(2)}`;
+            document.getElementById("savingsBalanceAmount").textContent = `$${accounts.savings.balance.toFixed(2)}`;
+            
+            // Update recent transactions
+            updateRecentTransactions();
+        }
+
+        function updateRecentTransactions() {
+            const transactionDiv = document.getElementById("recentTransactions");
+            transactionDiv.innerHTML = '';
+            
+            // Get 3 most recent checking transactions
+            const recentTransactions = [...accounts.checking.transactions]
+                .sort((a, b) => b.date - a.date)
+                .slice(0, 3);
+            
+            recentTransactions.forEach(transaction => {
+                const newTransaction = document.createElement("div");
+                newTransaction.className = `transaction ${transaction.status}`;
+                
+                const amountFormatted = transaction.amount >= 0 ? 
+                    `<span style="color:#28a745">+$${Math.abs(transaction.amount).toFixed(2)}</span>` : 
+                    `<span style="color:#dc3545">-$${Math.abs(transaction.amount).toFixed(2)}</span>`;
+                
+                newTransaction.innerHTML = `
+                    <strong>${transaction.description}</strong> ${amountFormatted}<br>
+                    <small>${transaction.date.toLocaleDateString()} | ${transaction.details}</small>
+                `;
+                
+                transactionDiv.appendChild(newTransaction);
+            });
+        }
+
+        // ===== TRANSFER TYPE SELECTION =====
+        function showTransferType() {
+            const transferType = document.getElementById("transferTypeSelect").value;
+            document.querySelectorAll(".transfer-type").forEach(el => el.classList.remove("active"));
+            document.getElementById(transferType + "Transfer").classList.add("active");
+        }
+
+        // ===== PROCESS TRANSFER =====
+        function processTransfer() {
+            const transferType = document.getElementById("transferTypeSelect").value;
+            
+            if (transferType === "internal") {
+                processInternalTransfer();
+            } else if (transferType === "external") {
+                processExternalTransfer();
+            } else {
+                processExternalAccountTransfer();
+            }
+        }
+
+        function processInternalTransfer() {
+            const account = document.getElementById("internalAccount").value;
+            const amount = parseFloat(document.getElementById("internalAmount").value);
+            const targetAccount = account.includes('Checking') ? 'checking' : 'savings';
+            
+            if (!amount || amount <= 0) {
+                alert("Please enter a valid amount");
+                return;
+            }
+            
+            if (amount > accounts.checking.balance) {
+                alert("Insufficient funds for this transfer");
+                return;
+            }
+            
+            // Update balances
+            accounts.checking.balance -= amount;
+            accounts[targetAccount].balance += amount;
+            
+            // Add transactions
+            const transaction = {
+                type: 'transfer',
+                amount: -amount,
+                description: `Transfer to ${targetAccount === 'checking' ? 'Checking' : 'Savings'}`,
+                details: `Account: ${account.split('(')[1].replace(')','')}`,
+                date: new Date(),
+                status: 'completed'
+            };
+            accounts.checking.transactions.unshift(transaction);
+            
+            const receivingTransaction = {
+                type: 'transfer',
+                amount: amount,
+                description: `Transfer from Checking`,
+                details: `Account: ${account.split('(')[1].replace(')','')}`,
+                date: new Date(),
+                status: 'completed'
+            };
+            accounts[targetAccount].transactions.unshift(receivingTransaction);
+            
+            // Update display
+            updateDashboard();
+            
+            // Show success message
+            document.getElementById("transferResult").innerHTML = 
+                `<i class="fas fa-check-circle"></i> Transfer of $${amount.toFixed(2)} to ${account.split('(')[0]} completed`;
+            
+            // Clear form
+            document.getElementById("internalAmount").value = "";
+        }
+
+        function processExternalTransfer() {
+            const recipient = document.getElementById("recipientName").value;
+            const bank = document.getElementById("recipientBank").value;
+            const account = document.getElementById("accountNumber").value;
+            const routing = document.getElementById("routingNumber").value;
+            const amount = parseFloat(document.getElementById("externalAmount").value);
+            const speed = document.getElementById("transferSpeed").value;
+            
+            if (!recipient || !bank || !account || !routing || !amount) {
+                alert("Please complete all recipient details");
+                return;
+            }
+            
+            if (amount <= 0) {
+                alert("Transfer amount must be positive");
+                return;
+            }
+            
+            if (routing.length !== 9) {
+                alert("Routing number must be 9 digits");
+                return;
+            }
+            
+            if (amount > accounts.checking.balance) {
+                alert("Insufficient funds for this transfer");
+                return;
+            }
+
+            // Update balance immediately
+            accounts.checking.balance -= amount;
+            
+            // Create transaction
+            const transaction = {
+                type: 'transfer',
+                amount: -amount,
+                description: `External Transfer to ${recipient}`,
+                details: `Bank: ${bank} | Acct: ${account} | Routing: ${routing}`,
+                date: new Date(),
+                status: speed === 'instant' ? 'completed' : 'pending',
+                speed: speed
+            };
+            
+            accounts.checking.transactions.unshift(transaction);
+            
+            // Update display
+            updateDashboard();
+            
+            // Show success message
+            document.getElementById("transferResult").innerHTML = 
+                `<i class="fas fa-check-circle"></i> External transfer of $${amount.toFixed(2)} to ${recipient} initiated<br>
+                ${document.getElementById("transferSpeed").options[document.getElementById("transferSpeed").selectedIndex].text}`;
+
+            // Clear form
+            document.getElementById("recipientName").value = "";
+            document.getElementById("recipientBank").value = "";
+            document.getElementById("accountNumber").value = "";
+            document.getElementById("routingNumber").value = "";
+            document.getElementById("externalAmount").value = "";
+        }
+
+        function processExternalAccountTransfer() {
+            const account = document.getElementById("externalAccountSelect").value;
+            const amount = parseFloat(document.getElementById("externalAccountAmount").value);
+            const speed = document.getElementById("externalAccountSpeed").value;
+            
+            if (!amount || amount <= 0) {
+                alert("Please enter a valid amount");
+                return;
+            }
+            
+            if (amount > accounts.checking.balance) {
+                alert("Insufficient funds for this transfer");
+                return;
+            }
+            
+            // Update balance immediately
+            accounts.checking.balance -= amount;
+            
+            // Create transaction
+            const transaction = {
+                type: 'transfer',
+                amount: -amount,
+                description: `Transfer to External Account`,
+                details: `Account: ${account.split('(')[1].replace(')','')}`,
+                date: new Date(),
+                status: 'pending',
+                speed: speed
+            };
+            
+            accounts.checking.transactions.unshift(transaction);
+            
+            // Update display
+            updateDashboard();
+            
+            // Show success message
+            document.getElementById("transferResult").innerHTML = 
+                `<i class="fas fa-check-circle"></i> Transfer of $${amount.toFixed(2)} to ${account.split('(')[0]} initiated<br>
+                ${document.getElementById("externalAccountSpeed").options[document.getElementById("externalAccountSpeed").selectedIndex].text}`;
+
+            // Clear form
+            document.getElementById("externalAccountAmount").value = "";
+        }
+
+        // ===== FAKE CHECK DEPOSIT =====
+        function depositCheck() {
+            const amount = parseFloat(document.getElementById("checkAmount").value);
+            
+            if (!amount || amount <= 0) {
+                alert("Please enter a valid check amount");
+                return;
+            }
+
+            // Show processing animation
+            document.getElementById("checkProcessing").style.display = "block";
+            document.getElementById("checkResult").style.display = "none";
+
+            // Simulate check processing (3 seconds)
+            setTimeout(() => {
+                document.getElementById("checkProcessing").style.display = "none";
+                
+                // Update balance
+                accounts.checking.balance += amount;
+                
+                // Add transaction
+                accounts.checking.transactions.unshift({
+                    type: 'deposit',
+                    amount: amount,
+                    description: "Mobile Check Deposit",
+                    details: "Check #" + Math.floor(100000 + Math.random() * 900000),
+                    date: new Date(),
+                    status: 'completed'
+                });
+                
+                // Update display
+                updateDashboard();
+
+                // Show result
+                document.getElementById("checkResult").style.display = "block";
+                document.getElementById("checkResult").innerHTML = 
+                    `<div class="check-deposit">
+                        <strong><i class="fas fa-check-circle"></i> Deposit accepted</strong><br>
+                        Amount: $${amount.toFixed(2)}<br>
+                        Available: Immediately
+                    </div>`;
+
+                // Clear input
+                document.getElementById("checkAmount").value = "";
+            }, 3000);
+        }
+
+        // ===== FAKE INTEREST CALCULATION =====
+        function calculateInterest() {
+            const now = new Date();
+            const lastInterestDate = accounts.savings.lastInterestDate;
+            
+            // Only add interest once per day in demo
+            if (now.toDateString() !== lastInterestDate.toDateString()) {
+                const interest = accounts.savings.balance * accounts.savings.interestRate / 365;
+                const interestAmount = parseFloat(interest.toFixed(2));
+                
+                if (interestAmount > 0) {
+                    accounts.savings.balance += interestAmount;
+                    accounts.savings.lastInterestDate = now;
+                    
+                    // Add transaction
+                    accounts.savings.transactions.unshift({
+                        type: 'interest',
+                        amount: interestAmount,
+                        description: "Interest Earned",
+                        details: "Daily Compounding",
+                        date: now,
+                        status: 'completed'
+                    });
+                    
+                    // Update display if we're viewing savings
+                    updateDashboard();
+                }
+            }
+        }
+
+        // ===== BILL PAY FUNCTIONS =====
+        function showAddPayeeForm() {
+            document.getElementById("payeeList").style.display = "none";
+            document.getElementById("addPayeeForm").style.display = "block";
+        }
+
+        function hideAddPayeeForm() {
+            document.getElementById("payeeList").style.display = "block";
+            document.getElementById("addPayeeForm").style.display = "none";
+        }
+
+        function addPayee() {
+            const name = document.getElementById("newPayeeName").value;
+            const account = document.getElementById("newPayeeAccount").value;
+            
+            if (!name || !account) {
+                alert("Please enter payee name and account number");
+                return;
+            }
+            
+            // Add to payees
+            accounts.bills.payees.push({
+                name: name,
+                account: account,
+                nextDue: { amount: 0, date: new Date(Date.now() + 30 * 86400000) }
+            });
+            
+            // Update UI
+            const payeeItem = document.createElement("div");
+            payeeItem.className = "bill-pay-item";
+            payeeItem.innerHTML = `
+                <div>
+                    <strong>${name}</strong><br>
+                    <small>Account: ${account}</small>
+                </div>
+                <div>
+                    <button style="width: auto; padding: 5px 10px;" onclick="payBill('${name}')">Pay</button>
+                </div>
+            `;
+            
+            document.getElementById("payeeList").prepend(payeeItem);
+            hideAddPayeeForm();
+            
+            // Clear form
+            document.getElementById("newPayeeName").value = "";
+            document.getElementById("newPayeeAccount").value = "";
+            document.getElementById("newPayeeAddress").value = "";
+            document.getElementById("newPayeePhone").value = "";
+            
+            alert(`${name} has been added to your payees`);
+        }
+
+        function payBill(payeeName) {
+            const payee = accounts.bills.payees.find(p => p.name === payeeName);
+            if (!payee) return;
+            
+            const amount = payee.nextDue.amount || parseFloat(prompt(`Enter payment amount for ${payeeName}:`, "0"));
+            if (!amount || amount <= 0) return;
+            
+            if (amount > accounts.checking.balance) {
+                alert("Insufficient funds for this payment");
+                return;
+            }
+            
+            // Process payment
+            accounts.checking.balance -= amount;
+            
+            // Add transaction
+            accounts.checking.transactions.unshift({
+                type: 'payment',
+                amount: -amount,
+                description: "Bill Payment",
+                details: payeeName.toUpperCase(),
+                date: new Date(),
+                status: 'completed'
+            });
+            
+            // Add to history
+            accounts.bills.history.unshift({
+                payee: payeeName,
+                amount: amount,
+                date: new Date()
+            });
+            
+            // Update next due date (30 days later for demo)
+            payee.nextDue.date = new Date(Date.now() + 30 * 86400000);
+            
+            // Update display
+            updateDashboard();
+            
+            alert(`Payment of $${amount.toFixed(2)} to ${payeeName} processed successfully`);
+        }
+
+        // ===== LOAN FUNCTIONS =====
+        function makeLoanPayment(loanName) {
+            const loan = accounts.loans.find(l => l.name === loanName);
+            if (!loan) return;
+            
+            const amount = parseFloat(prompt(`Enter payment amount for ${loanName} (Minimum: $${loan.nextPayment ? loan.nextPayment.amount.toFixed(2) : '100'}:`, loan.nextPayment ? loan.nextPayment.amount.toFixed(2) : "100"));
+            if (!amount || amount <= 0) return;
+            
+            if (amount > accounts.checking.balance) {
+                alert("Insufficient funds for this payment");
+                return;
+            }
+            
+            // Process payment
+            accounts.checking.balance -= amount;
+            loan.balance -= amount;
+            
+            // Add transaction
+            accounts.checking.transactions.unshift({
+                type: 'payment',
+                amount: -amount,
+                description: "Loan Payment",
+                details: loanName.toUpperCase(),
+                date: new Date(),
+                status: 'completed'
+            });
+            
+            // Update next payment if this was the scheduled payment
+            if (loan.nextPayment && Math.abs(amount - loan.nextPayment.amount) < 0.01) {
+                loan.nextPayment.date = new Date(loan.nextPayment.date.getTime() + 30 * 86400000);
+            }
+            
+            // Update display
+            updateDashboard();
+            
+            alert(`Payment of $${amount.toFixed(2)} to ${loanName} processed successfully`);
+        }
+
+        function showLoanApplication() {
+            alert("Redirecting to loan application...\n\nFor this demo, we'll simulate a loan application approval.");
+            
+            // Simulate loan approval after 3 seconds
+            setTimeout(() => {
+                const newLoan = {
+                    name: "Personal Loan",
+                    balance: 10000,
+                    number: "1234",
+                    rate: 0.0799,
+                    nextPayment: { amount: 325.50, date: new Date(Date.now() + 30 * 86400000) }
+                };
+                
+                accounts.loans.push(newLoan);
+                accounts.checking.balance += 10000;
+                
+                // Add transaction
+                accounts.checking.transactions.unshift({
+                    type: 'deposit',
+                    amount: 10000,
+                    description: "Loan Proceeds",
+                    details: "PERSONAL LOAN #1234",
+                    date: new Date(),
+                    status: 'completed'
+                });
+                
+                updateDashboard();
+                showTab('loans');
+                
+                alert("Congratulations! Your $10,000 personal loan has been approved at 7.99% APR.\n\nThe funds have been deposited to your checking account.");
+            }, 3000);
+        }
+
+        // ===== CREDIT SCORE FUNCTIONS =====
+        function showFullCreditReport() {
+            alert("Displaying full credit report...\n\nFor this demo, we're showing simulated credit data.");
+            
+            let report = "=== CREDIT REPORT ===\n";
+            report += `Score: ${accounts.credit.score} (Excellent)\n`;
+            report += `Report Date: ${accounts.credit.lastUpdated.toLocaleDateString()}\n\n`;
+            report += "--- Factors ---\n";
+            report += `Payment History: ${accounts.credit.factors.paymentHistory}% (Excellent)\n`;
+            report += `Credit Utilization: ${accounts.credit.factors.creditUtilization}% (Excellent)\n`;
+            report += `Credit Age: ${accounts.credit.factors.creditAge}% (Good)\n`;
+            report += `Total Accounts: ${accounts.credit.factors.totalAccounts}% (Fair)\n`;
+            report += `Inquiries: ${accounts.credit.factors.inquiries}% (Excellent)\n\n`;
+            report += "--- Accounts ---\n";
+            report += "Vantage West Platinum Visa (XXXX-1234)\n";
+            report += "Chase Freedom (XXXX-5678)\n";
+            report += "Auto Loan (XXXX-5623)\n";
+            report += "Home Equity Line (XXXX-7845)\n";
+            
+            alert(report);
+        }
+    </script>
+</body>
+</html>
